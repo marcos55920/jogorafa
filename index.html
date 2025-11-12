@@ -53,14 +53,10 @@
       text-align:center;
       user-select:none;
       display:none;
-    }
-    #question {
       font-size: 48px;
       font-weight: 900;
-      margin:0;
-      text-shadow: 3px 3px 8px rgba(0,0,0,0.7);
-      color:#4ecdc4;
       line-height: 1.1;
+      text-shadow: 3px 3px 8px rgba(0,0,0,0.7);
     }
     @media (max-width: 600px) {
       #question-panel {
@@ -68,8 +64,6 @@
         padding: 20px;
         top: 15px;
         right: 5%;
-      }
-      #question {
         font-size: 36px;
       }
     }
@@ -123,18 +117,17 @@
       min-width: 340px;
       min-height: 340px;
       display:flex;
-      align-items:flex-start;
-      justify-content:center;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
     }
     #start-content {
       flex: 1 1 0;
+      max-width: 400px;
     }
-    /* FOTO LATERAL FIXA E FLOUTANDO NA ESQUERDA */
+
+    /* FOTO RESPONSIVA, APENAS NA TELA INICIAL */
     #side-photo {
-      position: fixed;
-      top: 50%;
-      left: 20px;
-      transform: translateY(-50%);
       width: 160px;
       height: 220px;
       border-radius: 18px;
@@ -144,9 +137,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 30;
-      margin-left: 0; /* remove margem que estava deslocando */
-      pointer-events: none; /* evita que ela interfira em cliques */
+      margin-bottom: 20px;
     }
     #side-photo img {
       max-width: 100%;
@@ -155,23 +146,33 @@
       border-radius: 18px;
       object-fit: cover;
     }
+
     @media (max-width: 700px) {
-      #start-screen {
-        flex-direction: column;
-        min-width: unset;
-        align-items: center;
-        padding: 20px 10px;
-      }
       #side-photo {
         width: 120px;
         height: 150px;
+        margin-bottom: 15px;
+      }
+      #start-screen {
+        padding: 25px 15px 25px 15px;
+        min-width: auto;
+        min-height: auto;
+      }
+      #start-content {
+        max-width: 90vw;
+      }
+      .level-button {
+        padding: 12px 20px;
+        font-size: 16px;
       }
     }
+
     .level-buttons {
       display: flex;
       gap: 15px;
       justify-content: center;
-      margin-top: 30px;
+      margin-top: 20px;
+      flex-wrap: wrap;
     }
     .level-button {
       background: #4ecdc4;
@@ -183,6 +184,11 @@
       cursor:pointer;
       transition: all 0.3s;
       pointer-events: all;
+      min-width: 100px;
+      flex-grow: 1;
+      max-width: 140px;
+      text-align: center;
+      user-select: none;
     }
     .level-button:hover {
       background: #45b8b0;
@@ -236,22 +242,21 @@
       <div id="timer">Tempo: 60s</div>
       <div id="question-panel"><p id="question"></p></div>
 
+      <!-- Tela inicial com foto exibida somente aqui -->
       <div id="start-screen">
+        <div id="side-photo">
+          <img src="001.png" alt="Foto destaque" />
+        </div>
         <div id="start-content">
           <h1 id="game-title">🚀 Jogo da Rafa</h1>
           <p id="instructions">Toque na pedra com a resposta correta antes que ela chegue ao chão!</p>
-          <p style="font-size: 20px; margin-top: 30px; color: #4ecdc4;">Escolha o Nível:</p>
+          <p style="font-size: 20px; margin-top: 10px; color: #4ecdc4;">Escolha o Nível:</p>
           <div class="level-buttons">
             <button class="level-button easy" data-level="easy">😊 Fácil<br><span style="font-size:14px;">60 segundos</span></button>
             <button class="level-button medium" data-level="medium">😐 Médio<br><span style="font-size:14px;">60 segundos</span></button>
             <button class="level-button hard" data-level="hard">😰 Difícil<br><span style="font-size:14px;">60 segundos</span></button>
           </div>
         </div>
-      </div>
-
-      <!-- FOTO FIXA LATERAL ESQUERDA FORA DE start-screen -->
-      <div id="side-photo">
-        <img src="001.png" alt="Foto destaque" />
       </div>
 
       <div id="game-over-screen">
