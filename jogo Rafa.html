@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jogo do Foguete Matemático</title>
+  <style>
+    body,html {
+      margin:0; padding:0; height:100%; overflow:hidden;
+      font-family: Arial, sans-serif;
+      background: #141d30;
+    }
+    #game-container {
+      width:100vw;
+      height:100vh;
+      position:relative;
+      overflow:hidden;
+    }
+    #game-canvas {
+      position:absolute;
+      top:0; left:0;
+      width:100%; height:100%;
+      touch-action:none;
+      cursor:pointer;
+      display: block;
+    }
+    #ui-overlay {
+      position:absolute; top:0; left:0;
+      width:100%; height:100%;
+      pointer-events:none;
+    }
+    #score-panel {
+      position:absolute; top:20px; left:20px;
+      background: rgba(0,0,0,.7);
+      padding:15px 25px;
+      border-radius:10px;
+      color:#fff;
+      z-index:10;
+    }
+    #score {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0;
+    }
+    #question-panel {
+      position:absolute; top:20px; right:20px;
+      background: rgba(0,0,0,.7);
+      padding: 25px 30px;
+      border-radius: 15px;
+      color:#4ecdc4;
+      max-width: 400px;
+      z-index:10;
+      text-align:center;
+      user-select:none;
+      display:none;
+    }
+    #question {
+      font-size: 48px;
+      font-weight: 900;
+      margin:0;
+      text-shadow: 3px 3px 8px rgba(0,0,0,0.7);
+      color:#4ecdc4;
+      line-height: 1.1;
+    }
+    @media (max-width: 600px) {
+      #question-panel {
+        max-width: 90vw;
+        padding: 20px;
+        top: 15px;
+        right: 5%;
+      }
+      #question {
+        font-size: 36px;
+      }
+    }
+    #game-over-screen {
+      position:absolute;
+      top:50%; left:50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,.9);
+      padding:40px;
+      border-radius:20px;
+      text-align:center;
+      color:#fff;
+      display:none;
+      pointer-events:all;
+      z-index:20;
+    }
+    #game-over-screen h2 {
+      font-size:48px;
+      margin:0 0 20px 0;
+      color:#ff6b6b;
+    }
+    #final-score {
+      font-size:32px;
+      margin:20px 0;
+    }
+    #restart-button {
+      background: #4ecdc4;
+      color:#fff;
+      border:none;
+      padding: 15px 40px;
+      font-size:20px;
+      border-radius:10px;
+      cursor:pointer;
+      transition: background 0.3s;
+      pointer-events:all;
+    }
+    #restart-button:hover {
+      background: #45b8b0;
+    }
+    #start-screen {
+      position:absolute;
+      top:50%; left:50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,.9);
+      padding:40px 40px 40px 40px;
+      border-radius:20px;
+      text-align:center;
+      color:#fff;
+      pointer-events:all;
+      z-index:20;
+      min-width: 340px;
+      min-height: 340px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+    }
+    #start-content {
+      flex: 1 1 0;
+    }
+    /* FOTO LATERAL FIXA E FLOUTANDO NA ESQUERDA */
+    #side-photo {
+      position: fixed;
+      top: 50%;
+      left: 20px;
+      transform: translateY(-50%);
+      width: 160px;
+      height: 220px;
+      border-radius: 18px;
+      box-shadow: 0 6px 32px 0 #0008;
+      background: #142;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 30;
+      margin-left: 0; /* remove margem que estava deslocando */
+      pointer-events: none; /* evita que ela interfira em cliques */
+    }
+    #side-photo img {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+      border-radius: 18px;
+      object-fit: cover;
+    }
+    @media (max-width: 700px) {
+      #start-screen {
+        flex-direction: column;
+        min-width: unset;
+        align-items: center;
+        padding: 20px 10px;
+      }
+      #side-photo {
+        width: 120px;
+        height: 150px;
+      }
+    }
+    .level-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    .level-button {
+      background: #4ecdc4;
+      color:white;
+      border:none;
+      padding:15px 30px;
+      font-size:18px;
+      border-radius:10px;
+      cursor:pointer;
+      transition: all 0.3s;
+      pointer-events: all;
+    }
+    .level-button:hover {
+      background: #45b8b0;
+      transform: scale(1.05);
+    }
+    #level-info {
+      position:absolute;
+      top:80px; left:20px;
+      background:rgba(0,0,0,.7);
+      padding: 10px 20px;
+      border-radius: 10px;
+      color: white;
+      font-size: 16px;
+      z-index:10;
+    }
+    #timer {
+      position: absolute;
+      top: 20px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      padding: 15px 30px;
+      border-radius: 10px;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      z-index: 10;
+    }
+    .star {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle 2s infinite;
+    }
+    @keyframes twinkle {
+      0%, 100% {
+        opacity: 0.3;
+      }
+      50% {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <audio id="pop-sound" src="pop.mp3" preload="auto"></audio>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+    <div id="ui-overlay">
+      <div id="score-panel"><p id="score">Pontos: 0</p></div>
+      <div id="level-info">Nível: Fácil</div>
+      <div id="timer">Tempo: 60s</div>
+      <div id="question-panel"><p id="question"></p></div>
+
+      <div id="start-screen">
+        <div id="start-content">
+          <h1 id="game-title">🚀 Jogo da Rafa</h1>
+          <p id="instructions">Toque na pedra com a resposta correta antes que ela chegue ao chão!</p>
+          <p style="font-size: 20px; margin-top: 30px; color: #4ecdc4;">Escolha o Nível:</p>
+          <div class="level-buttons">
+            <button class="level-button easy" data-level="easy">😊 Fácil<br><span style="font-size:14px;">60 segundos</span></button>
+            <button class="level-button medium" data-level="medium">😐 Médio<br><span style="font-size:14px;">60 segundos</span></button>
+            <button class="level-button hard" data-level="hard">😰 Difícil<br><span style="font-size:14px;">60 segundos</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOTO FIXA LATERAL ESQUERDA FORA DE start-screen -->
+      <div id="side-photo">
+        <img src="001.png" alt="Foto destaque" />
+      </div>
+
+      <div id="game-over-screen">
+        <h2>Fim de Jogo!</h2>
+        <p id="final-score">Pontuação Final: 0</p>
+        <button id="restart-button">Jogar Novamente</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+window.onload = function(){
+  const canvas = document.getElementById("game-canvas");
+  const ctx = canvas.getContext("2d");
+
+  let gameState = "start";
+  let score = 0;
+  let rocks = [];
+  let currentQuestion = null;
+  let correctAnswer = null;
+  let currentLevel = "easy";
+  let timeRemaining = 60;
+  let timerInterval = null;
+
+  const popSound = document.getElementById("pop-sound");
+
+  const levelSettings = {
+    easy: { speed: 0.8, time: 60, name: "Fácil" },
+    medium: { speed: 1.5, time: 60, name: "Médio" },
+    hard: { speed: 2.5, time: 60, name: "Difícil" },
+  };
+
+  const questionsByLevel = {
+    easy: [
+      { question: "1 metro em centímetros?", answer: "100 cm", wrong: ["10 cm", "1000 cm", "1 cm"] },
+      { question: "2 metros em centímetros?", answer: "200 cm", wrong: ["20 cm", "2000 cm", "2 cm"] },
+      { question: "100 centímetros em metros?", answer: "1 m", wrong: ["10 m", "100 m", "0.1 m"] },
+      { question: "1 quilômetro em metros?", answer: "1000 m", wrong: ["100 m", "10 m", "10000 m"] },
+      { question: "3 metros em centímetros?", answer: "300 cm", wrong: ["30 cm", "3000 cm", "3 cm"] },
+      { question: "200 centímetros em metros?", answer: "2 m", wrong: ["20 m", "200 m", "0.2 m"] },
+      { question: "5 metros em centímetros?", answer: "500 cm", wrong: ["50 cm", "5000 cm", "5 cm"] },
+      { question: "10 metros em centímetros?", answer: "1000 cm", wrong: ["100 cm", "10000 cm", "10 cm"] }
+    ],
+    medium: [
+      { question: "2 quilômetros em metros?", answer: "2000 m", wrong: ["200 m", "20 m", "20000 m"] },
+      { question: "500 centímetros em metros?", answer: "5 m", wrong: ["50 m", "0.5 m", "500 m"] },
+      { question: "3 quilômetros em metros?", answer: "3000 m", wrong: ["300 m", "30 m", "30000 m"] },
+      { question: "800 centímetros em metros?", answer: "8 m", wrong: ["80 m", "0.8 m", "800 m"] },
+      { question: "1.5 quilômetros em metros?", answer: "1500 m", wrong: ["150 m", "15 m", "15000 m"] },
+      { question: "250 centímetros em metros?", answer: "2.5 m", wrong: ["25 m", "0.25 m", "250 m"] },
+      { question: "7 metros em centímetros?", answer: "700 cm", wrong: ["70 cm", "7000 cm", "7 cm"] }
+    ],
+    hard: [
+      { question: "4.2 quilômetros em metros?", answer: "4200 m", wrong: ["420 m", "42 m", "42000 m"] },
+      { question: "1200 centímetros em metros?", answer: "12 m", wrong: ["120 m", "1.2 m", "1200 m"] },
+      { question: "6.5 quilômetros em metros?", answer: "6500 m", wrong: ["650 m", "65 m", "65000 m"] },
+      { question: "1750 centímetros em metros?", answer: "17.5 m", wrong: ["175 m", "1.75 m", "1750 m"] },
+      { question: "8.3 quilômetros em metros?", answer: "8300 m", wrong: ["830 m", "83 m", "83000 m"] },
+      { question: "3250 centímetros em metros?", answer: "32.5 m", wrong: ["325 m", "3.25 m", "3250 m"] }
+    ]
+  };
+
+  function resizeCanvas(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createStars(){
+    const container = document.getElementById("game-container");
+    container.querySelectorAll(".star").forEach(star => star.remove());
+
+    for(let i=0;i<50;i++){
+      const star = document.createElement("div");
+      star.className = "star";
+      star.style.width = (Math.random()*3 +1) + "px";
+      star.style.height=star.style.width;
+      star.style.left = (Math.random()*100) + "%";
+      star.style.top = (Math.random()*100) + "%";
+      star.style.animationDelay= (Math.random()*2) + "s";
+      container.appendChild(star);
+    }
+  }
+
+  function showQuestion(visible){
+    document.getElementById("question-panel").style.display = visible ? "block" : "none";
+  }
+
+  function generateRocksForQuestion(){
+    rocks = [];
+
+    let options = [...currentQuestion.wrong];
+    options.push(currentQuestion.answer);
+
+    for(let i=options.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [options[i], options[j]] = [options[j], options[i]];
+    }
+
+    const rockWidth = 110;
+    const rockHeight = 70;
+    const spacing = 20;
+    const totalWidth = options.length * rockWidth + (options.length - 1) * spacing;
+    const startX = (canvas.width - totalWidth) / 2;
+
+    options.forEach((text, index) => {
+      rocks.push({
+        x: startX + index * (rockWidth + spacing),
+        y: -rockHeight - Math.random() * 200,
+        width: rockWidth,
+        height: rockHeight,
+        text: text,
+        speed: levelSettings[currentLevel].speed,
+        isCorrect: text === currentQuestion.answer
+      });
+    });
+  }
+
+  function generateQuestion(){
+    const levelQuestions = questionsByLevel[currentLevel];
+    const q = levelQuestions[Math.floor(Math.random()*levelQuestions.length)];
+    currentQuestion = q;
+    correctAnswer = q.answer;
+    document.getElementById("question").textContent = q.question;
+    showQuestion(true);
+
+    generateRocksForQuestion();
+  }
+
+  function drawRocks(){
+    rocks.forEach(rock => {
+      const gradient = ctx.createRadialGradient(
+        rock.x + rock.width/2,
+        rock.y + rock.height/3,
+        rock.width/10,
+        rock.x + rock.width/2,
+        rock.y + rock.height/2,
+        rock.width/2
+      );
+      gradient.addColorStop(0,"#5dd9c1");
+      gradient.addColorStop(1,"#3ba896");
+
+      ctx.save();
+
+      ctx.beginPath();
+      ctx.moveTo(rock.x + rock.width * 0.5, rock.y);
+      ctx.bezierCurveTo(
+        rock.x + rock.width * 0.95,
+        rock.y + rock.height * 0.1,
+        rock.x + rock.width * 0.9,
+        rock.y + rock.height * 0.8,
+        rock.x + rock.width * 0.5,
+        rock.y + rock.height
+      );
+      ctx.bezierCurveTo(
+        rock.x + rock.width * 0.1,
+        rock.y + rock.height * 0.8,
+        rock.x + rock.width * 0.05,
+        rock.y + rock.height * 0.1,
+        rock.x + rock.width * 0.5,
+        rock.y
+      );
+      ctx.closePath();
+
+      ctx.shadowColor = "rgba(0,0,0,0.4)";
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetX = 3;
+      ctx.shadowOffsetY = 3;
+
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      ctx.restore();
+
+      ctx.strokeStyle = "#258d7a";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(rock.x + rock.width * 0.5, rock.y);
+      ctx.bezierCurveTo(
+        rock.x + rock.width * 0.95,
+        rock.y + rock.height * 0.1,
+        rock.x + rock.width * 0.9,
+        rock.y + rock.height * 0.8,
+        rock.x + rock.width * 0.5,
+        rock.y + rock.height
+      );
+      ctx.bezierCurveTo(
+        rock.x + rock.width * 0.1,
+        rock.y + rock.height * 0.8,
+        rock.x + rock.width * 0.05,
+        rock.y + rock.height * 0.1,
+        rock.x + rock.width * 0.5,
+        rock.y
+      );
+      ctx.closePath();
+      ctx.stroke();
+
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 24px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(rock.text, rock.x + rock.width/2, rock.y + rock.height/2);
+    });
+  }
+
+  function updateGame(){
+    if(gameState !== "playing") return;
+    rocks.forEach(rock => rock.y += rock.speed);
+    if(rocks.some(rock => rock.y > canvas.height)){
+      endGame();
+    }
+  }
+
+  function handleTouch(x,y){
+    if(gameState !== "playing") return;
+    rocks.forEach(rock => {
+      if(x > rock.x && x < rock.x + rock.width && y > rock.y && y < rock.y + rock.height){
+        if(rock.isCorrect){
+          popSound.currentTime = 0;
+          popSound.play();
+          score += 10;
+          document.getElementById("score").textContent = `Pontos: ${score}`;
+          generateQuestion();
+        }else{
+          endGame();
+        }
+      }
+    });
+  }
+
+  function updateTimer(){
+    timeRemaining--;
+    document.getElementById("timer").textContent = `Tempo: ${timeRemaining}s`;
+    if(timeRemaining <= 0){
+      if(currentLevel === "easy"){
+        startGame("medium");
+      }else{
+        endGame();
+      }
+    }
+  }
+
+  function endGame(){
+    gameState = "gameover";
+    if(timerInterval){
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    showQuestion(false);
+    document.getElementById("final-score").textContent = `Pontuação Final: ${score}`;
+    document.getElementById("game-over-screen").style.display = "block";
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+    if(gameState === "playing"){
+      drawRocks();
+    }
+  }
+
+  function gameLoop(){
+    updateGame();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  function startGame(level){
+    currentLevel = level;
+    score = 0;
+    timeRemaining = levelSettings[level].time;
+    gameState = "playing";
+
+    document.getElementById("score").textContent = `Pontos: ${score}`;
+    document.getElementById("level-info").textContent = `Nível: ${levelSettings[level].name}`;
+    document.getElementById("timer").textContent = `Tempo: ${timeRemaining}s`;
+    document.getElementById("start-screen").style.display = "none";
+    document.getElementById("game-over-screen").style.display = "none";
+    showQuestion(true);
+
+    if(timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimer, 1000);
+
+    resizeCanvas();
+    generateQuestion();
+  }
+
+  document.getElementById("restart-button").addEventListener("click",()=>{
+    document.getElementById("start-screen").style.display = "block";
+    document.getElementById("game-over-screen").style.display = "none";
+    showQuestion(false);
+  });
+
+  canvas.addEventListener("click",(e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    handleTouch(x,y);
+  });
+
+  canvas.addEventListener("touchstart",(e)=>{
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    handleTouch(x,y);
+  },{passive:false});
+
+  document.querySelectorAll(".level-button").forEach(button=> {
+    button.addEventListener("click",()=>{
+      const level = button.getAttribute("data-level");
+      startGame(level);
+    });
+  });
+
+  window.addEventListener("resize", () => {
+    resizeCanvas();
+    createStars();
+  });
+
+  resizeCanvas();
+  createStars();
+  gameLoop();
+  showQuestion(false);
+};
+</script>
+</body>
+</html>
